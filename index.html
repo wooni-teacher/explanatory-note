@@ -284,15 +284,15 @@
 
         /* 하단 버튼 그룹 */
         .button-group { display: flex; justify-content: center; gap: 15px; margin-top: 50px; flex-wrap: wrap; }
-        .action-btn { padding: 15px 25px; border: none; border-radius: 30px; font-size: 20px; font-family: inherit; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: background-color 0.3s; }
+        .action-btn { padding: 15px 25px; border: none; border-radius: 30px; font-size: 18px; font-family: inherit; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: background-color 0.3s; }
         .btn-print { background-color: var(--point-mint); color: #333; }
         .btn-print:hover { background-color: #9ce0c3; }
         .btn-next { background-color: var(--point-blue); color: #fff; }
         .btn-next:hover { background-color: #aeb9e3; }
         .btn-prev { background-color: #dcdcdc; color: #333; }
         .btn-prev:hover { background-color: #c0c0c0; }
-        .btn-share { background-color: #ffe066; color: #d35400; font-weight: bold; }
-        .btn-share:hover { background-color: #ffd133; }
+        .btn-save { background-color: #ffe066; color: #b85c00; font-weight: bold; }
+        .btn-save:hover { background-color: #ffd133; }
 
         /* 인쇄 시 레이아웃 처리 (페이지 넘김 & 요소 숨김) */
         @media print {
@@ -610,6 +610,7 @@
 
         <!-- 하단 버튼 영역 -->
         <div class="button-group">
+            <button class="action-btn btn-save" onclick="saveData()">💾 브라우저에 임시 저장</button>
             <button class="action-btn btn-print" onclick="window.print()">🖨️ 학습지 예쁘게 인쇄하기</button>
             <button class="action-btn btn-next" onclick="goToWrite()">➡️ 다음 단계: 설명문 작성하기</button>
         </div>
@@ -643,15 +644,15 @@
         <!-- 하단 버튼 영역 -->
         <div class="button-group">
             <button class="action-btn btn-prev" onclick="goToPlan()">⬅️ 이전 단계: 계획서 보기</button>
+            <button class="action-btn btn-save" onclick="saveData()">💾 브라우저에 임시 저장</button>
             <button class="action-btn btn-print" onclick="window.print()">🖨️ 설명문 예쁘게 인쇄하기</button>
-            <button class="action-btn btn-share" onclick="window.open('https://padlet.com/zpr1120_2/padlet-47ei6xfamqxrlq2r', '_blank')">🔗 최종 단계: 공유하기</button>
         </div>
     </div>
 
 </div>
 
 <script>
-    // 돌림판 게임 데이터 배열 (주제, 방식, 대상 3가지)
+    // 돌림판 게임 데이터 배열
     const topics = [
         "🍔 내가 제일 좋아하는 간식이나 음식\n(예: 마라탕, 탕후루, 삼각김밥)",
         "🎮 요즘 나의 최애 관심사\n(예: 즐겨하는 게임, 아이돌, 유튜브 채널)",
@@ -678,7 +679,7 @@
         "👦 내 친구\n(편안하고 친근한 말투로!)"
     ];
 
-    // 주사위 굴리기 애니메이션 함수
+    // 주사위 굴리기 애니메이션
     function spinRoulette() {
         const slotTopic = document.getElementById("slot-topic");
         const slotMethod = document.getElementById("slot-method");
@@ -764,7 +765,7 @@
         }
     }
 
-    // 페이지 전환 함수 (계획서 <-> 설명문 작성란)
+    // 페이지 전환
     function goToWrite() {
         document.getElementById('page-plan').style.display = 'none';
         document.getElementById('page-write').style.display = 'block';
@@ -779,7 +780,7 @@
         triggerResize();
     }
 
-    // 텍스트 영역 자동 높이 조절
+    // 높이 자동 조절
     function autoResizeTextarea() {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
@@ -793,33 +794,74 @@
         });
     }
 
-    // ★ 초기 세팅 및 인쇄 전 미러링 설정 ★
+    // 데이터 저장하기 (LocalStorage)
+    function saveData() {
+        const data = {};
+        
+        document.querySelectorAll('input[type="text"]').forEach((input, index) => {
+            data['input_' + index] = input.value;
+        });
+        
+        document.querySelectorAll('textarea').forEach((textarea, index) => {
+            data['textarea_' + index] = textarea.value;
+        });
+        
+        data['struct_select'] = document.getElementById('struct-select').value;
+
+        localStorage.setItem('essayAppData', JSON.stringify(data));
+        alert('작성한 내용이 사용 중인 브라우저에 안전하게 임시저장 되었습니다! 💾\n(창을 실수로 닫아도 나중에 이 기기에서 다시 열면 그대로 불러옵니다.)');
+    }
+
+    // 데이터 불러오기 (LocalStorage)
+    function loadData() {
+        const savedData = localStorage.getItem('essayAppData');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            
+            document.querySelectorAll('input[type="text"]').forEach((input, index) => {
+                if(data['input_' + index] !== undefined) input.value = data['input_' + index];
+            });
+            
+            document.querySelectorAll('textarea').forEach((textarea, index) => {
+                if(data['textarea_' + index] !== undefined) textarea.value = data['textarea_' + index];
+            });
+            
+            if(data['struct_select'] !== undefined) {
+                document.getElementById('struct-select').value = data['struct_select'];
+                showTemplate();
+            }
+        }
+    }
+
+    // 초기 세팅 (데이터 불러오기 및 인쇄 전 미러링 설정)
     document.addEventListener("DOMContentLoaded", function() {
+        
+        // 페이지 열릴 때 저장된 데이터 먼저 불러오기
+        loadData();
+
         const textareas = document.querySelectorAll('textarea');
         textareas.forEach(textarea => {
             textarea.addEventListener('input', autoResizeTextarea);
+            // 초기 로드된 데이터에 맞춰 높이 재설정
             textarea.style.height = 'auto';
             textarea.style.height = (textarea.scrollHeight) + 'px';
 
-            // 인쇄 시 글씨 잘림 방지를 위한 미러(Mirror) 텍스트 박스 만들기
+            // 인쇄 시 글씨 잘림 방지를 위한 미러 텍스트 박스 만들기
             let mirror = document.createElement('div');
             mirror.className = 'print-mirror ' + textarea.className;
             textarea.parentNode.insertBefore(mirror, textarea.nextSibling);
         });
         
-        // 인쇄 버튼을 눌렀을 때 실행되는 함수 (내용 복사)
         window.addEventListener('beforeprint', function() {
             triggerResize();
             document.querySelectorAll('textarea').forEach(textarea => {
                 let mirror = textarea.nextElementSibling;
                 if (mirror && mirror.classList.contains('print-mirror')) {
-                    
                     if (!textarea.value.trim()) {
                         mirror.innerHTML = "&nbsp;"; 
                     } else {
                         mirror.textContent = textarea.value;
                     }
-
                     const computed = window.getComputedStyle(textarea);
                     mirror.style.textAlign = computed.textAlign;
                     mirror.style.padding = computed.padding;
